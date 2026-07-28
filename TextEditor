@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrystalEdit Pro - Editor di Testo Minimal</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #2e1065 100%);
+            --crystal-bg: rgba(255, 255, 255, 0.03);
+            --crystal-border: rgba(255, 255, 255, 0.08);
+            --crystal-highlight: rgba(255, 255, 255, 0.15);
+            --interface-glow: rgba(56, 189, 248, 0.15);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-color: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.3);
+            --panel-bg: rgba(15, 23, 42, 0.4);
+            --btn-bg: rgba(255, 255, 255, 0.04);
+            --btn-border: rgba(255, 255, 255, 0.08);
+            --focus-glow: rgba(56, 189, 248, 0.02);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-gradient);
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* Contenitore Principale */
+        .editor-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1000px;
+            padding: 30px;
+            background: var(--crystal-bg);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border: 1px solid var(--crystal-border);
+            border-radius: 24px;
+            box-shadow: 
+                0 40px 80px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 var(--crystal-highlight);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Header e Top Bar */
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 5px;
+            transition: opacity 0.3s ease;
+        }
+
+        .brand {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
+        .brand span {
+            color: var(--accent-color);
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Barra degli Strumenti */
+        .toolbar-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 14px;
+            background: var(--panel-bg);
+            border: 1px solid var(--crystal-border);
+            border-radius: 16px;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .toolbar-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: var(--crystal-border);
+            margin: 0 4px;
+        }
+
+        /* Pulsanti d'Azione */
+        .btn-action {
+            background: var(--btn-bg);
+            border: 1px solid var(--btn-border);
+            color: var(--text-primary);
+            min-width: 36px;
+            height: 34px;
+            padding: 0 12px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 10px var(--interface-glow);
+        }
+
+        .btn-action:active {
+            transform: scale(0.96);
+        }
+
+        .btn-action.primary {
+            border-color: rgba(56, 189, 248, 0.3);
+            color: var(--accent-color);
+        }
+
+        .btn-action.primary:hover {
+            border-color: var(--accent-color);
+            background: rgba(56, 189, 248, 0.08);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        select {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--btn-border);
+            color: var(--text-primary);
+            padding: 0 12px;
+            height: 34px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        select:focus {
+            border-color: var(--accent-color);
+        }
+
+        /* Area di Scrittura */
+        .workspace-wrapper {
+            position: relative;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--crystal-border);
+            border-radius: 20px;
+            box-shadow: inset 0 4px 30px rgba(0,0,0,0.4);
+            overflow: hidden;
+            transition: border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .workspace-wrapper::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 0%, var(--focus-glow), transparent 70%);
+            pointer-events: none;
+        }
+
+        .text-editor-input {
+            width: 100%;
+            min-height: 480px;
+            max-height: 650px;
+            padding: 30px;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 1.05rem;
+            line-height: 1.7;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            position: relative;
+            z-index: 2;
+        }
+
+        .text-editor-input:empty:before {
+            content: attr(placeholder);
+            color: var(--text-secondary);
+            opacity: 0.4;
+        }
+
+        /* Barra di Stato e Statistiche */
+        .editor-footer {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 5px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            transition: opacity 0.3s ease;
+        }
+
+        .metrics-cluster {
+            display: flex;
+            gap: 20px;
+        }
+
+        .metric-badge span {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        /* MODALITÀ FOCUS (Nasconde gli elementi di disturbo) */
+        .focus-mode .top-header,
+        .focus-mode .toolbar-wrapper,
+        .focus-mode .editor-footer {
+            opacity: 0.12;
+        }
+        .focus-mode .toolbar-wrapper:hover,
+        .focus-mode .top-header:hover,
+        .focus-mode .editor-footer:hover {
+            opacity: 1;
+        }
+        .focus-mode .workspace-wrapper {
+            border-color: rgba(56, 189, 248, 0.2);
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.05), inset 0 4px 30px rgba(0,0,0,0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="editor-container" id="editor-container">
+        <div class="top-header">
+            <div class="brand">Crystal<span>Edit Pro</span></div>
+            <div class="top-actions">
+                <button class="btn-action" onclick="resetDocument()" title="Crea un nuovo documento vuoto">Nuovo</button>
+                <button class="btn-action" onclick="exportDocument('html')" title="Esporta il testo in formato HTML">Esporta HTML</button>
+                <button class="btn-action primary" onclick="exportDocument('txt')" title="Salva sul computer in formato .txt">Salva TXT</button>
+            </div>
+        </div>
+        
+        <div class="toolbar-wrapper">
+            <div class="toolbar-row">
+                <button class="btn-action" onclick="executeStyle('undo')" title="Annulla l'ultima azione">←</button>
+                <button class="btn-action" onclick="executeStyle('redo')" title="Ripristina l'azione annullata">→</button>
+                
+                <div class="separator"></div>
+                
+                <select onchange="executeStyle('formatBlock', this.value)" id="block-format" title="Stile del paragrafo">
+                    <option value="P">Testo Normale</option>
+                    <option value="H1">Titolo Principale (H1)</option>
+                    <option value="H2">Sottotitolo (H2)</option>
+                    <option value="H3">Sezione (H3)</option>
+                    <option value="PRE">Blocco di Codice</option>
+                </select>
+                
+                <div class="separator"></div>
+
+                <button class="btn-action" style="font-weight:700;" onclick="executeStyle('bold')" title="Grassetto">B</button>
+                <button class="btn-action" style="font-style:italic;" onclick="executeStyle('italic')" title="Corsivo">I</button>
+                <button class="btn-action" style="text-decoration:underline;" onclick="executeStyle('underline')" title="Sottolineato">U</button>
+                <button class="btn-action" style="text-decoration:line-through;" onclick="executeStyle('strikeThrough')" title="Barrato">S</button>
+                
+                <div class="separator"></div>
+
+                <button class="btn-action" onclick="executeStyle('justifyLeft')" title="Allinea a sinistra">|==</button>
+                <button class="btn-action" onclick="executeStyle('justifyCenter')" title="Centra il testo">=|=</button>
+                <button class="btn-action" onclick="executeStyle('justifyRight')" title="Allinea a destra">==|</button>
+                <button class="btn-action" onclick="executeStyle('justifyFull')" title="Giustifica il testo">|||</button>
+            </div>
+            
+            <div class="toolbar-row">
+                <button class="btn-action" onclick="executeStyle('insertUnorderedList')" title="Elenco puntato">• Elenco</button>
+                <button class="btn-action" onclick="executeStyle('insertOrderedList')" title="Elenco numerato">1. Elenco</button>
+                <button class="btn-action" onclick="clearFormatting()" title="Rimuovi formattazione e stili">Rimuovi Stili</button>
+                <button class="btn-action" onclick="insertTimestamp()" title="Inserisci data e ora correnti">Data e Ora</button>
+                <button class="btn-action" id="toggle-focus" onclick="toggleFocusMode()" title="Attiva la modalità di scrittura senza distrazioni">Modalità Focus</button>
+            </div>
+        </div>
+
+        <div class="workspace-wrapper">
+            <div 
+                class="text-editor-input" 
+                id="text-editor" 
+                contenteditable="true" 
+                oninput="processEditorRuntime()"
+                placeholder="Inizia a scrivere qui il tuo testo..."
+            ></div>
+        </div>
+
+        <div class="editor-footer">
+            <div id="system-status">Modifiche salvate automaticamente in locale</div>
+            <div class="metrics-cluster">
+                <div class="metric-badge">Tempo di lettura: <span id="metric-reading-time">0 min</span></div>
+                <div class="metric-badge">Parole: <span id="metric-words">0</span></div>
+                <div class="metric-badge">Caratteri: <span id="metric-chars">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const editorNode = document.getElementById('text-editor');
+        const containerNode = document.getElementById('editor-container');
+        const statusNode = document.getElementById('system-status');
+
+        // Carica il testo salvato precedentemente
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedContent = localStorage.getItem('crystaledit_document_data');
+            if (savedContent) {
+                editorNode.innerHTML = savedContent;
+                updateMetrics();
+            }
+            editorNode.focus();
+        });
+
+        function executeStyle(command, value = null) {
+            document.execCommand(command, false, value);
+            editorNode.focus();
+            processEditorRuntime();
+        }
+
+        function clearFormatting() {
+            document.execCommand('removeFormat', false, null);
+            document.execCommand('formatBlock', false, 'P');
+            editorNode.focus();
+            processEditorRuntime();
+        }
+
+        function insertTimestamp() {
+            const now = new Date();
+            const timestamp = `[${now.toLocaleDateString()} ${now.toLocaleTimeString()}] `;
+            
+            const selection = window.getSelection();
+            if (selection.getRangeAt && selection.rangeCount) {
+                const range = selection.getRangeAt(0);
+                range.deleteContents();
+                const textNode = document.createTextNode(timestamp);
+                range.insertNode(textNode);
+                range.selectNodeContents(textNode);
+                selection.removeAllRanges();
+                const newRange = document.createRange();
+                newRange.setStartAfter(textNode);
+                newRange.setEndAfter(textNode);
+                selection.addRange(newRange);
+            } else {
+                editorNode.innerHTML += timestamp;
+            }
+            
+            editorNode.focus();
+            processEditorRuntime();
+        }
+
+        function toggleFocusMode() {
+            containerNode.classList.toggle('focus-mode');
+            const btn = document.getElementById('toggle-focus');
+            if(containerNode.classList.contains('focus-mode')) {
+                btn.style.borderColor = 'var(--accent-color)';
+                btn.style.color = 'var(--accent-color)';
+            } else {
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }
+            editorNode.focus();
+        }
+
+        function resetDocument() {
+            if (confirm("Vuoi creare un nuovo documento vuoto? Il testo attuale verrà sovrascritto.")) {
+                editorNode.innerHTML = "";
+                localStorage.removeItem('crystaledit_document_data');
+                updateMetrics();
+                editorNode.focus();
+            }
+        }
+
+        function exportDocument(format) {
+            let content = "";
+            let filename = "documento_esportato";
+            let type = "text/plain;charset=utf-8";
+
+            if (format === 'html') {
+                content = editorNode.innerHTML;
+                filename += ".html";
+                type = "text/html;charset=utf-8";
+            } else {
+                content = editorNode.innerText || "";
+                filename += ".txt";
+            }
+
+            const blob = new Blob([content], { type: type });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            
+            statusNode.innerText = `Documento scaricato come ${filename.toUpperCase()}`;
+            setTimeout(() => { statusNode.innerText = "Modifiche salvate automaticamente in locale"; }, 4000);
+        }
+
+        function processEditorRuntime() {
+            updateMetrics();
+            localStorage.setItem('crystaledit_document_data', editorNode.innerHTML);
+        }
+
+        function updateMetrics() {
+            const cleanText = editorNode.innerText || "";
+            
+            const charCount = cleanText.length;
+            const wordsArray = cleanText.trim().split(/\s+/).filter(word => word.length > 0);
+            const wordCount = wordsArray.length;
+
+            // Media di lettura umana standard: ~200 parole al minuto
+            const readingTime = Math.ceil(wordCount / 200);
+
+            document.getElementById('metric-words').innerText = wordCount;
+            document.getElementById('metric-chars').innerText = charCount;
+            document.getElementById('metric-reading-time').innerText = `${wordCount === 0 ? 0 : readingTime} min`;
+        }
+    </script>
+</body>
+</html>
